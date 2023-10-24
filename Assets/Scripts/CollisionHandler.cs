@@ -3,26 +3,55 @@ using UnityEngine.SceneManagement;
 
 public class CollisionHandler : MonoBehaviour
 {
+    [SerializeField] float delaySeconds = 1f;
+    [SerializeField] AudioClip crashSound;
+    [SerializeField] AudioClip winSound;
+
+    AudioSource audioSource;
+
+    bool isTransitioning = false;
+
+    void Start()
+    {
+        audioSource = GetComponent<AudioSource>();
+    }
     void OnCollisionEnter(Collision other) 
     {
+        if (isTransitioning)
+        {
+            return;
+        }
+
         switch (other.gameObject.tag)
         {
             case "Friendly":
                 Debug.Log("This thing is friendly");
                 break;
             case "Finish":
-                LoadNextLevel();
+                LoadSequence();
                 break;
             default:
-                ReloadLevel();
+                StartCrashSequence();
                 break;
         }
     }
 
-    void ReloadLevel()
+    void StartCrashSequence()
     {
-        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
-        SceneManager.LoadScene(currentSceneIndex);
+        isTransitioning = true;
+        GetComponent<Movement>().enabled = false;
+        audioSource.Stop();
+        audioSource.PlayOneShot(crashSound);
+        Invoke("ReloadLevel", delaySeconds);
+    }
+
+    void LoadSequence() 
+    {
+        isTransitioning = true;
+        GetComponent<Movement>().enabled = false;
+        audioSource.Stop();
+        audioSource.PlayOneShot(winSound);
+        Invoke("LoadNextLevel", delaySeconds);
     }
 
     void LoadNextLevel()
@@ -36,5 +65,11 @@ public class CollisionHandler : MonoBehaviour
         }
 
         SceneManager.LoadScene(nextSceneIndex);
+    }
+
+    void ReloadLevel()
+    {
+        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+        SceneManager.LoadScene(currentSceneIndex);
     }
 }
